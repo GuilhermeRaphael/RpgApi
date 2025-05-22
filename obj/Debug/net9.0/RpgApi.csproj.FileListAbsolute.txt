@@ -506,3 +506,4 @@ D:\2DSGuilhermeGabriel\DS\RpgApi\obj\Debug\net9.0\staticwebassets.pack.json
 D:\2DSGuilhermeGabriel\DS\RpgApi\obj\Debug\net9.0\RpgApi.csproj.Up2Date
 D:\2DSGuilhermeGabriel\DS\RpgApi\obj\Debug\net9.0\RpgApi.genruntimeconfig.cache
 D:\2DSGuilhermeGabriel\DS\RpgApi\obj\Debug\net9.0\ref\RpgApi.dll
+D:\2DSGuilhermeGabriel\DS\RpgApi\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

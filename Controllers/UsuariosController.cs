@@ -9,18 +9,28 @@ using Microsoft.Extensions.Logging;
 using RpgApi.Data;
 using RpgApi.Models;
 using RpgApi.Utils;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens; 
+using System.Text; 
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RpgApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class UsuariosController : Controller
     {
         private readonly DataContext _context;
 
-        public UsuariosController(DataContext context)
+        private readonly IConfiguration _configuration;
+
+        public UsuariosController(DataContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         private async Task<bool> UsuarioExistente(string username)
@@ -34,6 +44,28 @@ namespace RpgApi.Controllers
             return false;
         }
 
+        private string CriarToken(Usuario usuario)
+        {
+            List<Claim> claims = new List<Claim>
+            {
+            new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+            new Claim(ClaimTypes.Name, usuario.Username)
+            };
+            SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8
+            .GetBytes(_configuration.GetSection("ConfiguracaoToken:Chave").Value));
+            SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.Now.AddDays(1),
+                SigningCredentials = creds
+            };
+            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        [AllowAnonymous]
         [HttpPost("Registrar")]
         public async Task<IActionResult> RegistrarUsuario(Usuario user)
         {
@@ -53,6 +85,8 @@ namespace RpgApi.Controllers
                 await _context.TB_USUARIOS.AddAsync(user);
                 await _context.SaveChangesAsync();
 
+                
+
                 return Ok(user.Id);
             }
             catch (System.Exception ex)
@@ -61,6 +95,7 @@ namespace RpgApi.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpPost("Autenticar")]
         public async Task<IActionResult> AutenticarUsuario(Usuario credenciais)
         {
@@ -86,6 +121,9 @@ namespace RpgApi.Controllers
                 }
                 else
                 {
+                    usuario.PasswordHash = null;
+                    usuario.PasswordSalt = null;
+                    usuario.Token = CriarToken(usuario);
                     return Ok(usuario);
                 }
             }

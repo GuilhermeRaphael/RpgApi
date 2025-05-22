@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RpgApi.Data;
@@ -10,15 +11,19 @@ using RpgApi.Models.Enuns;
 
 namespace RpgApi.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class PersonagensController : ControllerBase
     {
         private readonly DataContext _context;
 
-        public PersonagensController(DataContext context)
+        private readonly IConfiguration _configuration;
+
+        public PersonagensController(DataContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         [HttpGet("{id}")] //Buscar pelo id
