@@ -8,10 +8,12 @@ using Microsoft.EntityFrameworkCore;
 using RpgApi.Data;
 using RpgApi.Models;
 using RpgApi.Models.Enuns;
+using System.Security.Claims;
+using RpgApi.Extensions;
 
 namespace RpgApi.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Jogador, Admin")]
     [ApiController]
     [Route("[controller]")]
     public class PersonagensController : ControllerBase
@@ -64,6 +66,11 @@ namespace RpgApi.Controllers
         {
             try
             {
+                if(novoPersonagem.PontosVida > 100)
+                    throw new Exception("Pontos de vida nao pode ser maior que 100");
+
+                novoPersonagem.Usuario = _context.TB_USUARIOS.FirstOrDefault(uBusca => uBusca.Id == User.UsuarioId());
+
                 await _context.TB_PERSONAGENS.AddAsync(novoPersonagem);
                 await _context.SaveChangesAsync();
 
@@ -207,14 +214,15 @@ namespace RpgApi.Controllers
             }
         }
 
-        [HttpGet("GetByUser/{userId}")]
-        public async Task<IActionResult> GetByUserAsync(int userId)
+        [HttpGet("GetByUser")]
+        public async Task<IActionResult> GetByUserAsync()
         {
             try
             {
-                List<Personagem> lista = await _context
-                    .TB_PERSONAGENS.Where(u => u.Usuario.Id == userId)
-                    .ToListAsync();
+                int id = int.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value);
+                
+                List<Personagem> lista = await _context.TB_PERSONAGENS
+                .Where(u => u.Usuario.Id == id).ToListAsync();
                 return Ok(lista);
             }
             catch (System.Exception ex)
@@ -260,6 +268,27 @@ namespace RpgApi.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [HttpGet("GetByPerfil")]
+        public async Task<IActionResult> GetByPerfilAsync()
+        {
+            try
+            {
+                List<Personagem> lista = new List<Personagem>();
+
+                if(User.UsuarioPerfil() == "Admin")
+                   lista = await _context.TB_PERSONAGENS.ToListAsync();
+                else
+                    lista = await _context.TB_PERSONAGENS
+                            .Where(p=> p.Usuario.Id == User.UsuarioId()).ToListAsync();
+                return Ok(lista);
+            }
+            catch(System.Exception ex)
+            {
+                return BadRequest (ex.Message + " - " + ex.InnerException);
+            }
+
         }
     }
 }

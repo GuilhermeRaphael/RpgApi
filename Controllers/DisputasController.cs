@@ -292,5 +292,25 @@ namespace RpgApi.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpGet("PersonagemRandom")]
+        public async Task<IActionResult> Sorteio()
+        {
+            List<Personagem> personagens = 
+                await _context.TB_PERSONAGENS.ToListAsync();
+
+            //Sorteio com numero da quantidade de personagens
+            int sorteio = new Random().Next(personagens.Count);
+
+            //busca na lista pelo indice sorteado(não é o ID)
+            Personagem p = personagens[sorteio];
+
+            string msg = string.Format("N° Sorteado {0}. Personagem: {1}", sorteio, p.Nome);
+
+            return Ok(msg);
+        }
+
+
+
     }
 }
